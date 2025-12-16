@@ -162,7 +162,8 @@ public record ProductRequest(String name,
 ````
 
 ````java
-public record ProductResponse(String name,
+public record ProductResponse(String id,
+                              String name,
                               String description,
                               String skuCode,
                               BigDecimal price) {
@@ -176,6 +177,7 @@ public class ProductMapper {
 
     public static ProductResponse toProductResponse(Product product) {
         return new ProductResponse(
+                product.getId(),
                 product.getName(),
                 product.getDescription(),
                 product.getSkuCode(),
@@ -257,4 +259,47 @@ public class ProductController {
     }
 
 }
+````
+
+## Probando endpoints del ProductController
+
+### Crear producto
+
+````bash
+$ curl -v -X POST -H "Content-type: application/json" -d "{\"name\": \"iPhone 15\", \"description\":\"iPhone 15 es un smartphone de Apple\", \"skuCode\":\"p-001\", \"price\": 1000}" http://localhost:8081/api/v1/products | jq
+>
+< HTTP/1.1 201
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Date: Tue, 16 Dec 2025 22:26:24 GMT
+<
+{
+  "id": "6941dc9085c96dcc5b1972f2",
+  "name": "iPhone 15",
+  "description": "iPhone 15 es un smartphone de Apple",
+  "skuCode": "p-001",
+  "price": 1000
+}
+````
+
+### Listar productos
+
+````bash
+$ curl -v http://localhost:8081/api/v1/products | jq
+>
+< HTTP/1.1 200
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Date: Tue, 16 Dec 2025 22:27:04 GMT
+<
+* Connection #0 to host localhost:8081 left intact
+[
+  {
+    "id": "6941dc9085c96dcc5b1972f2",
+    "name": "iPhone 15",
+    "description": "iPhone 15 es un smartphone de Apple",
+    "skuCode": "p-001",
+    "price": 1000
+  }
+]
 ````
