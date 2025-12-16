@@ -137,3 +137,30 @@ uri: mongodb://localhost:27017/db_product_service
   ````
 - `..?authSource=admin` o el `authentication-database: admin` es crucial porque `MongoDB` crea el usuario root en la
   base de datos admin por defecto cuando usas `MONGO_INITDB_ROOT_USERNAME`.
+
+## Agregando clases del modelo document y repository
+
+Como primer paso, crearemos la colección a productos y su interface de repositorio:
+
+````java
+
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Data
+@Document(collection = "products")
+public class Product {
+    @Id
+    private String id;
+    private String name;
+    private String description;
+    private BigDecimal price;
+}
+````
+
+````java
+public interface ProductRepository extends MongoRepository<Product, String> {
+}
+````
+
