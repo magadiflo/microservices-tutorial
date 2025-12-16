@@ -98,45 +98,31 @@ spring:
     name: product-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/db_product_service
+      uri: mongodb://root:password@localhost:27017/db_product_service?authSource=admin
 ````
 
-#### 📝 Nota sobre Autenticación MongoDB
+### 📝 Notas Importantes sobre la Configuración
 
-La configuración actual de `MongoDB` no requiere autenticación en desarrollo debido al `localhost exception` de
-`MongoDB`. Esto permite conexiones sin credenciales desde `localhost` para facilitar el desarrollo.
-
-#### 📝 Comportamiento en Desarrollo
-
-Aunque se definan `MONGO_INITDB_ROOT_USERNAME` y `MONGO_INITDB_ROOT_PASSWORD` en el `compose`, `MongoDB` permite
-conexiones locales sin autenticación por defecto. Por eso funciona:
-
-````yml
-uri: mongodb://localhost:27017/db_product_service
-````
-
-#### 📝 Recomendaciones para producción
-
-- Habilitar `--auth` obligatoriamente.
-- Usar variables de entorno para credenciales.
-- No exponer el puerto `27017` si `MongoDB` y la app están en la misma red `Docker`.
-- Usar nombres de servicio en lugar de `localhost` (ej: `s-mongodb`).
-- Para forzar autenticación en producción, modificar el `compose.yml`:
-  ````yml
-  services:
-    s-mongodb:
-      # ... resto de la configuración
-      command: ["--auth", "--setParameter", "enableLocalhostAuthBypass=false"]
-  ````
-- Y usar credenciales en `application.yml`:
-  ````yml
-  spring:
-    data:
-      mongodb:
-        uri: mongodb://root:password@s-mongodb:27017/db_product_service?authSource=admin
-  ````
-- `..?authSource=admin` o el `authentication-database: admin` es crucial porque `MongoDB` crea el usuario root en la
-  base de datos admin por defecto cuando usas `MONGO_INITDB_ROOT_USERNAME`.
+1. `Credenciales obligatorias`. Como en el `compose.yml` definimos el servicio de `MongoDB` con `username` y `password`,
+   es necesario incluir estas credenciales en la URI de conexión del `application.yml`. Sin ellas, la aplicación
+   levantará sin problemas, pero al intentar interactuar con la base de datos (consultas, inserciones, etc.)
+   obtendremos un error de autenticación.
+2. El parámetro `authSource=admin`. Es crucial agregar `?authSource=admin` en la URI
+   (o `authentication-database: admin` en formato extendido) porque `MongoDB` crea el usuario `root` en la base de
+   datos `admin` por defecto cuando usamos `MONGO_INITDB_ROOT_USERNAME`. Sin este parámetro, `MongoDB` buscará el
+   usuario en la base de datos `db_product_service` y fallará la autenticación.
+3. Formato alternativo de configuración. También puedes usar el `formato extendido`:
+   ````yml
+   spring:
+     data:
+       mongodb:
+         host: localhost
+         port: 27017
+         database: db_product_service
+         username: root
+         password: password
+         authentication-database: admin
+   ````
 
 ## Agregando clases del modelo document y repository
 
@@ -155,6 +141,7 @@ public class Product {
     private String id;
     private String name;
     private String description;
+    private String skuCode;
     private BigDecimal price;
 }
 ````
@@ -164,3 +151,110 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 }
 ````
 
+## Creando DTO y Mapper
+
+````java
+public record ProductRequest(String name,
+                             String description,
+                             String skuCode,
+                             BigDecimal price) {
+}
+````
+
+````java
+public record ProductResponse(String name,
+                              String description,
+                              String skuCode,
+                              BigDecimal price) {
+}
+````
+
+````java
+
+@UtilityClass
+public class ProductMapper {
+
+    public static ProductResponse toProductResponse(Product product) {
+        return new ProductResponse(
+                product.getName(),
+                product.getDescription(),
+                product.getSkuCode(),
+                product.getPrice()
+        );
+    }
+
+    public static Product toProduct(ProductRequest productRequest) {
+        return Product.builder()
+                .name(productRequest.name())
+                .description(productRequest.description())
+                .skuCode(productRequest.skuCode())
+                .price(productRequest.price())
+                .build();
+    }
+
+}
+````
+
+## Creando clase de servicio
+
+````java
+public interface ProductService {
+    List<ProductResponse> getAllProducts();
+
+    ProductResponse saveProduct(ProductRequest productRequest);
+}
+````
+
+````java
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class ProductServiceImpl implements ProductService {
+
+    private final ProductRepository productRepository;
+
+    @Override
+    public List<ProductResponse> getAllProducts() {
+        log.info("Obteniendo todos los productos...");
+        return this.productRepository.findAll().stream()
+                .map(ProductMapper::toProductResponse)
+                .toList();
+    }
+
+    @Override
+    public ProductResponse saveProduct(ProductRequest productRequest) {
+        Product product = ProductMapper.toProduct(productRequest);
+        this.productRepository.save(product);
+        log.info("Producto guardado correctamente...");
+        return ProductMapper.toProductResponse(product);
+    }
+
+}
+````
+
+## Creando controlador ProductController
+
+````java
+
+@Slf4j
+@RequiredArgsConstructor
+@RestController
+@RequestMapping(path = "/api/v1/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
+        return ResponseEntity.ok(this.productService.getAllProducts());
+    }
+
+    @PostMapping
+    public ResponseEntity<ProductResponse> saveProduct(@RequestBody ProductRequest productRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(this.productService.saveProduct(productRequest));
+    }
+
+}
+````

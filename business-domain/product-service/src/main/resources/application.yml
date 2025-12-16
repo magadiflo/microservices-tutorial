@@ -8,4 +8,4 @@ spring:
     name: product-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/db_product_service
+      uri: mongodb://root:password@localhost:27017/db_product_service?authSource=admin
