@@ -37,11 +37,11 @@ networks:
 ## Creando Product Service
 
 Creamos el proyecto desde
-[Spring Initializr](https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.5.8&packaging=jar&configurationFileFormat=yaml&jvmVersion=21&groupId=dev.magadiflo&artifactId=product-service&name=product-service&description=Demo%20project%20for%20Spring%20Boot&packageName=dev.magadiflo.product.app&dependencies=lombok,web,data-mongodb,testcontainers,actuator)
+[Spring Initializr](https://start.spring.io/#!type=maven-project&language=java&platformVersion=3.5.9&packaging=jar&configurationFileFormat=yaml&jvmVersion=21&groupId=dev.magadiflo&artifactId=product-service&name=product-service&description=Demo%20project%20for%20Spring%20Boot&packageName=dev.magadiflo.product.app&dependencies=lombok,web,data-mongodb,testcontainers,actuator)
 con las siguientes dependencias.
 
 ````xml
-<!--Spring Boot 3.5.8-->
+<!--Spring Boot 3.5.9-->
 <!--Java 21-->
 <dependencies>
     <dependency>
@@ -405,7 +405,7 @@ $ mvn test
   '  |____| .__|_| |_|_| |_\__, | / / / /
  =========|_|==============|___/=/_/_/_/
 
- :: Spring Boot ::                (v3.5.8)
+ :: Spring Boot ::                (v3.5.9)
 
 2025-12-17T18:32:26.706-05:00  INFO 9440 --- [product-service] [           main] o.t.utility.ImageNameSubstitutor         : Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
 2025-12-17T18:32:26.731-05:00  INFO 9440 --- [product-service] [           main] org.testcontainers.DockerClientFactory   : Testcontainers version: 1.21.3
